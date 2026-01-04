@@ -103,4 +103,5 @@ userInput.addEventListener('keypress', (e) => {
         e.preventDefault();
         handleUserInput();
     }
+
 });
