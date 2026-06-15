@@ -1,109 +1,141 @@
-const API_KEY = 'AQ.Ab8RN6Ljx4TKD9p56CWzET302T1-mQnLnAARbFkWpwNure4hsQ'; 
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const API_KEY = 'AQ.Ab8RN6Ljx4TKD9p56CWzET302T1-mQnLnAARbFkWpwNure4hsQ';
+const API_URL =
+'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+
 const chatMessages = document.getElementById('chat-messages');
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 
-
 async function generateResponse(prompt) {
-    const response = await fetch(`${API_URL}?key=${API_KEY}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+    try {
+        const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
 
-        body: JSON.stringify({
-            contents: [
-                {
-                    parts: [
-                        {
-                            text: prompt
-                        }
-                    ]
-                }
-            ]
-        })
-    });
+            body: JSON.stringify({
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            {
+                                text: prompt
+                            }
+                        ]
+                    }
+                ]
+            })
+        });
 
-    if (!response.ok) {
-    
-        throw new Error('Failed to generate response');
-        
+        const data = await response.json();
+
+        console.log("API Response:", data);
+
+        if (!response.ok) {
+            throw new Error(
+                data.error?.message || "API request failed"
+            );
+        }
+
+        return (
+            data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+            "No response generated."
+        );
+
+    } catch (error) {
+        console.error(error);
+        return "Error connecting to Gemini API.";
     }
-
-    const data = await response.json();
-    
-    return data.candidates[0].content.parts[0].text;
-
 }
 
 function cleanMarkdown(text) {
     return text
         .replace(/#{1,6}\s?/g, '')
         .replace(/\*\*/g, '')
-        .replace(/\n{3,}/g, '\n\n')
         .trim();
-        
 }
 
 function addMessage(message, isUser) {
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message');
-    messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
-    const profileImage = document.createElement('img');
-    profileImage.classList.add('profile-image');
 
-    profileImage.src = isUser ? 'user.jpg' : 'bot.jpg';
+    const msg = document.createElement("div");
 
-    profileImage.alt = isUser ? 'User' : 'Bot';
-    const messageContent = document.createElement('div');
-    messageContent.classList.add('message-content');
-    messageContent.textContent = message;
+    msg.className =
+        `message ${isUser ? "user-message" : "bot-message"}`;
 
-    messageElement.appendChild(profileImage);
-    messageElement.appendChild(messageContent);
+    msg.innerHTML = `
+        <img
+        class="profile-image"
+        src="${isUser ? 'user.jpg' : 'bot.jpg'}">
 
-    chatMessages.appendChild(messageElement);
-    
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+        <div class="message-content">
+            ${message}
+        </div>
+    `;
+
+    chatMessages.appendChild(msg);
+
+    chatMessages.scrollTop =
+        chatMessages.scrollHeight;
 }
 
 async function handleUserInput() {
-    const userMessage = userInput.value.trim();
-    if (userMessage) {
-        addMessage(userMessage, true);
-        
-        userInput.value = '';
-        
 
-        sendButton.disabled = true;
-        userInput.disabled = true;
+    const text =
+        userInput.value.trim();
 
-        try {
-            const botMessage = await generateResponse(userMessage);
-            addMessage(cleanMarkdown(botMessage), false);
-            
-        } catch (error) {
-            console.error('Error:', error);
-            addMessage('Sorry, I encountered an error. Please try again.', false);
-    
-        } finally {
-            sendButton.disabled = false;
-            userInput.disabled = false;
-            userInput.focus();
-        }
+    if (!text) return;
+
+    addMessage(text, true);
+
+    userInput.value = "";
+
+    sendButton.disabled = true;
+
+    try {
+
+        const reply =
+            await generateResponse(text);
+
+        addMessage(
+            cleanMarkdown(reply),
+            false
+        );
+
+    } catch {
+
+        addMessage(
+            "Something went wrong.",
+            false
+        );
+
+    } finally {
+
+        sendButton.disabled = false;
+
+        userInput.focus();
+
     }
+
 }
 
-sendButton.addEventListener('click', handleUserInput);
+sendButton.addEventListener(
+    "click",
+    handleUserInput
+);
 
-userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+userInput.addEventListener(
+    "keydown",
+    (e) => {
 
-        e.preventDefault();
-        handleUserInput();
+        if (
+            e.key === "Enter" &&
+            !e.shiftKey
+        ) {
+
+            e.preventDefault();
+
+            handleUserInput();
+        }
     }
-
-});
-
-
+);
