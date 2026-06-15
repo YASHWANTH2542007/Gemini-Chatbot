@@ -1,117 +1,147 @@
-const API_KEY = 'AQ.Ab8RN6Ljx4TKD9p56CWzET302T1-mQnLnAARbFkWpwNure4hsQ';
+const API_KEY = "AQ.Ab8RN6JtMWdMdi0J81lEATeIu7FOhVOMrB24P6y1YL3JADeAuQ";
 const API_URL =
-'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
-const chatMessages = document.getElementById('chat-messages');
-const userInput = document.getElementById('user-input');
-const sendButton = document.getElementById('send-button');
+const chatMessages = document.getElementById("chat-messages");
+const userInput = document.getElementById("user-input");
+const sendButton = document.getElementById("send-button");
 
 async function generateResponse(prompt) {
     try {
-        const response = await fetch(`${API_URL}?key=${API_KEY}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
 
-            body: JSON.stringify({
-                contents: [
-                    {
-                        role: "user",
-                        parts: [
-                            {
-                                text: prompt
-                            }
-                        ]
-                    }
-                ]
-            })
-        });
+        const response = await fetch(
+            `${API_URL}?key=${API_KEY}`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [
+                                {
+                                    text: prompt
+                                }
+                            ]
+                        }
+                    ]
+                })
+            }
+        );
 
         const data = await response.json();
 
-        console.log("API Response:", data);
+        console.log("Gemini:", data);
 
         if (!response.ok) {
             throw new Error(
-                data.error?.message || "API request failed"
+                data?.error?.message ||
+                "API Error"
             );
         }
 
         return (
-            data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+            data?.candidates?.[0]
+            ?.content?.parts?.[0]
+            ?.text
+            ||
             "No response generated."
         );
 
-    } catch (error) {
-        console.error(error);
-        return "Error connecting to Gemini API.";
+    } catch (err) {
+
+        console.error(err);
+
+        return "Unable to connect to Gemini.";
+
     }
 }
 
 function cleanMarkdown(text) {
+
     return text
-        .replace(/#{1,6}\s?/g, '')
-        .replace(/\*\*/g, '')
+        .replace(/#{1,6}\s?/g, "")
+        .replace(/\*\*/g, "")
         .trim();
+
 }
 
 function addMessage(message, isUser) {
 
-    const msg = document.createElement("div");
+    const wrapper =
+        document.createElement("div");
 
-    msg.className =
-        `message ${isUser ? "user-message" : "bot-message"}`;
+    wrapper.className =
+        `message ${
+            isUser
+            ? "user-message"
+            : "bot-message"
+        }`;
 
-    msg.innerHTML = `
-        <img
-        class="profile-image"
-        src="${isUser ? 'user.jpg' : 'bot.jpg'}">
+    wrapper.innerHTML =
+`
+<img
+class="profile-image"
+src="${
+isUser
+? "user.jpg"
+: "bot.jpg"
+}">
 
-        <div class="message-content">
-            ${message}
-        </div>
-    `;
+<div class="message-content">
+${message}
+</div>
+`;
 
-    chatMessages.appendChild(msg);
+    chatMessages.appendChild(
+        wrapper
+    );
 
     chatMessages.scrollTop =
         chatMessages.scrollHeight;
+
 }
 
 async function handleUserInput() {
 
-    const text =
+    const msg =
         userInput.value.trim();
 
-    if (!text) return;
+    if (!msg)
+        return;
 
-    addMessage(text, true);
+    addMessage(
+        msg,
+        true
+    );
 
     userInput.value = "";
 
-    sendButton.disabled = true;
+    sendButton.disabled =
+        true;
 
     try {
 
         const reply =
-            await generateResponse(text);
+            await generateResponse(
+                msg
+            );
 
         addMessage(
-            cleanMarkdown(reply),
-            false
-        );
-
-    } catch {
-
-        addMessage(
-            "Something went wrong.",
+            cleanMarkdown(
+                reply
+            ),
             false
         );
 
     } finally {
 
-        sendButton.disabled = false;
+        sendButton.disabled =
+            false;
 
         userInput.focus();
 
@@ -129,13 +159,14 @@ userInput.addEventListener(
     (e) => {
 
         if (
-            e.key === "Enter" &&
-            !e.shiftKey
+            e.key === "Enter"
         ) {
 
             e.preventDefault();
 
             handleUserInput();
+
         }
+
     }
 );
